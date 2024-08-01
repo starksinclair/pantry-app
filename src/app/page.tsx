@@ -48,15 +48,14 @@ const HomePage: React.FC = () => {
         const userDoc = doc(usersRef, auth.currentUser?.uid);
         const userDocSnap = await getDoc(userDoc);
 
-        await setDoc(userDoc, {
-          uid: auth.currentUser?.uid,
-          name: auth.currentUser?.displayName,
-          photoURL: auth.currentUser?.photoURL,
-          email: auth.currentUser?.email,
-        });
-        // await setDoc(userDoc, {
-        //   id: 1,
-        // });
+        if (userDocSnap.exists()) {
+          await setDoc(userDoc, {
+            uid: auth.currentUser?.uid,
+            name: auth.currentUser?.displayName,
+            photoURL: auth.currentUser?.photoURL,
+            email: auth.currentUser?.email,
+          });
+        }
         console.log("Data setup complete");
       } catch (error) {
         console.error("Error setting up data:", error);

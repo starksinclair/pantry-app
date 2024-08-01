@@ -1,9 +1,20 @@
 // src/components/PantryList.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Grid, TextField, Typography } from "@mui/material";
 import PantryItem from "./PantryItem";
+import PantryForm from "./PantryForm";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+} from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 interface PantryItem {
   id: string;
@@ -11,43 +22,76 @@ interface PantryItem {
   quantity: number;
   category: string;
   expirationDate: string;
+  createdAt: number;
 }
 
-const mockData: PantryItem[] = [
-  {
-    id: "1",
-    name: "Flour",
-    quantity: 2,
-    category: "Baking",
-    expirationDate: "2024-08-01",
-  },
-  {
-    id: "2",
-    name: "Sugar",
-    quantity: 1,
-    category: "Baking",
-    expirationDate: "2024-09-01",
-  },
-  // Add more mock items as needed
-];
-
 const PantryList: React.FC = () => {
-  const [items, setItems] = useState<PantryItem[]>(mockData);
-  const [search, setSearch] = useState<string>("");
+  useEffect(() => {
+    const fetchPantryData = async () => {
+      try {
+        const pantriesRef = collection(db, "pantries");
+        const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
+        const pantryDocSnap = await getDoc(pantryDoc);
+        if (pantryDocSnap.exists()) {
+          const docId = pantryDocSnap.data().userID;
+          if (docId === auth.currentUser?.uid) {
+            const itemsRef = collection(pantriesRef, docId, "items");
+            const q = query(itemsRef);
+            const listen = onSnapshot(q, (snapshot) => {
+              const itemsData = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+              })) as PantryItem[];
+              setItems(itemsData);
+            });
+            return () => listen();
+            // const itemsSnap = await getDocs(itemsRef);
+            // const itemsData = itemsSnap.docs.map((doc) => ({
+            //   id: doc.id,
+            //   ...doc.data(),
+            // })) as PantryItem[];
+            // setItems(itemsData);
+            // console.log(itemsData);
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(search.toLowerCase())
-  );
+    fetchPantryData();
+  }, []);
+  const [items, setItems] = useState<PantryItem[]>([]);
+  const [search, setSearch] = useState<string>("");
+  const [editItem, setEditItem] = useState<PantryItem | null>(null);
+
+  const filteredItems = items
+    .filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.createdAt - b.createdAt);
+  const handleCloseForm = () => {
+    setEditItem(null);
+  };
 
   const handleEdit = (item: PantryItem) => {
-    // Implement your edit logic here
+    setEditItem(item);
     console.log("Edit item:", item);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     // Implement your delete logic here
-    setItems(items.filter((item) => item.id !== id));
-    console.log("Deleted item with id:", id);
+    try {
+      const pantriesRef = collection(db, "pantries");
+      const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
+      const itemsRef = collection(pantryDoc, "items");
+      const itemDocRef = doc(itemsRef, id);
+
+      await deleteDoc(itemDocRef);
+      //  setItems(items.filter((item) => item.id !== id));
+
+      console.log("Deleted item with id:", id);
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
   };
 
   return (
@@ -73,6 +117,13 @@ const PantryList: React.FC = () => {
           </Grid>
         ))}
       </Grid>
+      {editItem && (
+        <PantryForm
+          open={Boolean(editItem)}
+          handleClose={handleCloseForm}
+          item={editItem}
+        />
+      )}
     </div>
   );
 };

@@ -8,7 +8,16 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-
+import { auth, db } from "../firebase";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 interface PantryFormProps {
   open: boolean;
   handleClose: () => void;
@@ -18,6 +27,7 @@ interface PantryFormProps {
     quantity: number;
     category: string;
     expirationDate: string;
+    createdAt: number;
   };
 }
 
@@ -41,17 +51,37 @@ const PantryForm: React.FC<PantryFormProps> = ({ open, handleClose, item }) => {
     }
   }, [item]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!auth.currentUser) {
+      console.error("No authenticated user");
+      return;
+    }
+    const pantriesRef = collection(db, "pantries");
+    const pantryDoc = doc(pantriesRef, auth.currentUser.uid);
+    const itemsRef = collection(pantryDoc, "items");
     const data = {
-      id: item?.id || Math.random().toString(),
       name,
       quantity: parseInt(quantity),
       category,
       expirationDate,
+      updatedAt: serverTimestamp(),
     };
+    if (!item) {
+      const pantryDocSnap = await getDoc(pantryDoc);
 
-    // Handle adding or editing items here without Firebase, e.g., update the state or mock data
-    console.log("Submitted data:", data);
+      if (!pantryDocSnap.exists()) {
+        await setDoc(pantryDoc, { userID: auth.currentUser.uid });
+      }
+      await addDoc(itemsRef, { ...data, createdAt: serverTimestamp() });
+    } else {
+      // Handle item update logic here
+      await updateDoc(doc(itemsRef, item.id), data);
+      console.log("item", item.id);
+    }
+    setName("");
+    setQuantity("");
+    setCategory("");
+    setExpirationDate("");
 
     handleClose();
   };
@@ -89,6 +119,8 @@ const PantryForm: React.FC<PantryFormProps> = ({ open, handleClose, item }) => {
           margin="dense"
           label="Expiration Date"
           fullWidth
+          type="date"
+          focused
           variant="outlined"
           value={expirationDate}
           onChange={(e) => setExpirationDate(e.target.value)}

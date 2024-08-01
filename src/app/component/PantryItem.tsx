@@ -19,6 +19,7 @@ interface PantryItemProps {
     quantity: number;
     category: string;
     expirationDate: string;
+    createdAt: number;
   };
   onEdit: (item: PantryItemProps["item"]) => void;
   onDelete: (id: string) => void;
