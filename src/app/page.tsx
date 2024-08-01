@@ -11,6 +11,7 @@ import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 import { collection, doc, getDoc, setDoc } from "firebase/firestore";
+import { Analytics } from "@vercel/analytics/react";
 
 const HomePage: React.FC = () => {
   const [openForm, setOpenForm] = useState<boolean>(false);
@@ -76,6 +77,7 @@ const HomePage: React.FC = () => {
   }, [user]);
   return (
     <>
+      <Analytics />
       {!isLoggedIn ? (
         <LoginPage />
       ) : (
