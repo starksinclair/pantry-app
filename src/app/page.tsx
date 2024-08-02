@@ -1,7 +1,16 @@
 // pages/index.tsx
 "use client";
 import React, { useEffect, useState } from "react";
-import { Container, Button, Alert, Snackbar } from "@mui/material";
+import {
+  Container,
+  Button,
+  Alert,
+  Snackbar,
+  Avatar,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+} from "@mui/material";
 import PantryList from "./component/PantryList";
 import PantryForm from "./component/PantryForm";
 import LoginPage from "./login";
@@ -12,6 +21,8 @@ import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { Analytics } from "@vercel/analytics/react";
+import { blue, deepPurple } from "@mui/material/colors";
+import { Logout } from "@mui/icons-material";
 
 const HomePage: React.FC = () => {
   const [openForm, setOpenForm] = useState<boolean>(false);
@@ -75,6 +86,26 @@ const HomePage: React.FC = () => {
     setupUser();
     return () => unsubscribe();
   }, [user]);
+
+  const singleCharacter = auth.currentUser?.email
+    ?.slice(0, 1)
+    .toLocaleUpperCase();
+  console.log(singleCharacter);
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = async () => {
+    setAnchorEl(null);
+    await signOut(auth)
+      .then(() => {
+        setIsLoggedIn(false);
+      })
+      .catch((error) => {
+        setError(error.message);
+      });
+  };
   return (
     <>
       <Analytics />
@@ -82,9 +113,48 @@ const HomePage: React.FC = () => {
         <LoginPage />
       ) : (
         <Container className="flex flex-col h-[100vh]">
-          <h1 className="p-4 font-extrabold text-4xl text-center">
-            My Pantry Tracker
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="p-4 font-extrabold text-3xl text-center">
+              My Pantry Tracker
+            </h1>
+            {singleCharacter && (
+              <>
+                {" "}
+                <Avatar
+                  sx={{ bgcolor: blue }}
+                  id="demo-positioned-button"
+                  aria-controls={open ? "demo-positioned-menu" : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={open ? "true" : undefined}
+                  onClick={handleClick}
+                >
+                  {singleCharacter}
+                </Avatar>
+                <Menu
+                  id="demo-positioned-menu"
+                  aria-labelledby="demo-positioned-button"
+                  anchorEl={anchorEl}
+                  open={open}
+                  onClose={handleClose}
+                  anchorOrigin={{
+                    vertical: "top",
+                    horizontal: "left",
+                  }}
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "left",
+                  }}
+                >
+                  <MenuItem onClick={handleClose}>
+                    <ListItemIcon>
+                      <Logout fontSize="small" />
+                    </ListItemIcon>
+                    Logout
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+          </div>
           <Button
             variant="contained"
             color="primary"

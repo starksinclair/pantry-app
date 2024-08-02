@@ -7,6 +7,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
 } from "@mui/material";
 import { auth, db } from "../firebase";
 import {
@@ -18,6 +22,7 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
+import { categoryOptions } from "./PantryList";
 interface PantryFormProps {
   open: boolean;
   handleClose: () => void;
@@ -107,14 +112,31 @@ const PantryForm: React.FC<PantryFormProps> = ({ open, handleClose, item }) => {
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
         />
-        <TextField
+        {/* <TextField
           margin="dense"
           label="Category"
+          placeholder="eg: poultry, baking"
           fullWidth
           variant="outlined"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-        />
+        /> */}
+        <FormControl fullWidth sx={{}}>
+          <InputLabel>Category</InputLabel>
+          <Select
+            value={category}
+            margin="dense"
+            label="Category"
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <MenuItem value="">All</MenuItem>
+            {categoryOptions.map((category) => (
+              <MenuItem key={category} value={category}>
+                {category}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <TextField
           margin="dense"
           label="Expiration Date"

@@ -2,7 +2,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Grid, TextField, Typography } from "@mui/material";
+import {
+  Grid,
+  TextField,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
 import PantryItem from "./PantryItem";
 import PantryForm from "./PantryForm";
 import {
@@ -10,7 +18,6 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  getDocs,
   onSnapshot,
   query,
 } from "firebase/firestore";
@@ -24,8 +31,38 @@ interface PantryItem {
   expirationDate: string;
   createdAt: number;
 }
+export const categoryOptions = [
+  "Fruits",
+  "Vegetables",
+  "Grains",
+  "Dairy",
+  "Meat",
+  "Poultry",
+  "Seafood",
+  "Legumes",
+  "Nuts and Seeds",
+  "Herbs and Spices",
+  "Baking Supplies",
+  "Condiments",
+  "Snacks",
+  "Beverages",
+  "Canned Goods",
+  "Frozen Foods",
+  "Oils and Vinegars",
+  "Pasta and Noodles",
+  "Sauces",
+  "Sweets and Desserts",
+  "Food",
+  "Other",
+];
 
 const PantryList: React.FC = () => {
+  const [items, setItems] = useState<PantryItem[]>([]);
+  const [search, setSearch] = useState<string>("");
+  const [editItem, setEditItem] = useState<PantryItem | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [expirationFilter, setExpirationFilter] = useState<string>("");
+
   useEffect(() => {
     const fetchPantryData = async () => {
       try {
@@ -45,13 +82,6 @@ const PantryList: React.FC = () => {
               setItems(itemsData);
             });
             return () => listen();
-            // const itemsSnap = await getDocs(itemsRef);
-            // const itemsData = itemsSnap.docs.map((doc) => ({
-            //   id: doc.id,
-            //   ...doc.data(),
-            // })) as PantryItem[];
-            // setItems(itemsData);
-            // console.log(itemsData);
           }
         }
       } catch (error) {
@@ -61,13 +91,19 @@ const PantryList: React.FC = () => {
 
     fetchPantryData();
   }, []);
-  const [items, setItems] = useState<PantryItem[]>([]);
-  const [search, setSearch] = useState<string>("");
-  const [editItem, setEditItem] = useState<PantryItem | null>(null);
 
   const filteredItems = items
     .filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+    .filter((item) =>
+      categoryFilter ? item.category === categoryFilter : true
+    )
+    .filter((item) =>
+      expirationFilter
+        ? new Date(item.expirationDate) <= new Date(expirationFilter)
+        : true
+    )
     .sort((a, b) => a.createdAt - b.createdAt);
+
   const handleCloseForm = () => {
     setEditItem(null);
   };
@@ -78,7 +114,6 @@ const PantryList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    // Implement your delete logic here
     try {
       const pantriesRef = collection(db, "pantries");
       const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
@@ -86,8 +121,6 @@ const PantryList: React.FC = () => {
       const itemDocRef = doc(itemsRef, id);
 
       await deleteDoc(itemDocRef);
-      //  setItems(items.filter((item) => item.id !== id));
-
       console.log("Deleted item with id:", id);
     } catch (error) {
       console.error("Error deleting item:", error);
@@ -105,6 +138,29 @@ const PantryList: React.FC = () => {
         fullWidth
         sx={{ mb: 2 }}
         onChange={(e) => setSearch(e.target.value)}
+      />
+      <FormControl fullWidth sx={{ mb: 2 }}>
+        <InputLabel>Category</InputLabel>
+        <Select
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <MenuItem value="">All</MenuItem>
+          {categoryOptions.map((category) => (
+            <MenuItem key={category} value={category}>
+              {category}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+      <TextField
+        label="Expiration Date"
+        type="date"
+        variant="outlined"
+        fullWidth
+        sx={{ mb: 2 }}
+        InputLabelProps={{ shrink: true }}
+        onChange={(e) => setExpirationFilter(e.target.value)}
       />
       <Grid container spacing={2}>
         {filteredItems.map((item) => (
