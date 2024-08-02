@@ -1,6 +1,6 @@
 // pages/index.tsx
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Container,
   Button,
@@ -10,6 +10,7 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
+  IconButton,
 } from "@mui/material";
 import PantryList from "./component/PantryList";
 import PantryForm from "./component/PantryForm";
@@ -23,6 +24,11 @@ import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { Analytics } from "@vercel/analytics/react";
 import { blue, deepPurple } from "@mui/material/colors";
 import { Logout } from "@mui/icons-material";
+import { Camera } from "react-camera-pro";
+import Image from "next/image";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import CloseIcon from "@mui/icons-material/Close";
+import CameraCapture from "./component/CameraCapture";
 
 const HomePage: React.FC = () => {
   const [openForm, setOpenForm] = useState<boolean>(false);
@@ -30,6 +36,9 @@ const HomePage: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const camera = useRef(null);
+  const [image, setImage] = useState(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const handleOpenForm = () => {
     setSelectedItem(null);
@@ -54,25 +63,32 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     const setupUser = async () => {
       if (!user || !user.uid) return;
-      console.log("Setting up user data", user);
+
       try {
         const usersRef = collection(db, "users");
-        const userDoc = doc(usersRef, auth.currentUser?.uid);
+        const userDoc = doc(usersRef, user.uid);
         const userDocSnap = await getDoc(userDoc);
 
-        if (userDocSnap.exists()) {
+        if (!userDocSnap.exists()) {
           await setDoc(userDoc, {
-            uid: auth.currentUser?.uid,
-            name: auth.currentUser?.displayName,
-            photoURL: auth.currentUser?.photoURL,
-            email: auth.currentUser?.email,
+            uid: user.uid,
+            name: user.displayName,
+            photoURL: user.photoURL,
+            email: user.email,
           });
+          console.log("New user data saved to database");
+        } else {
+          console.log("User already exists in database");
         }
-        console.log("Data setup complete");
       } catch (error) {
         console.error("Error setting up data:", error);
       }
     };
+
+    setupUser();
+  }, [user]);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setIsLoggedIn(true);
@@ -83,9 +99,8 @@ const HomePage: React.FC = () => {
       }
     });
 
-    setupUser();
     return () => unsubscribe();
-  }, [user]);
+  }, []);
 
   const singleCharacter = auth.currentUser?.email
     ?.slice(0, 1)
@@ -155,6 +170,7 @@ const HomePage: React.FC = () => {
               </>
             )}
           </div>
+
           <Button
             variant="contained"
             color="primary"
@@ -169,7 +185,7 @@ const HomePage: React.FC = () => {
             handleClose={handleCloseForm}
             item={selectedItem}
           />
-          <Button onClick={handleSignOut}>Sign Out</Button>
+          {/* <Button onClick={handleSignOut}>Sign Out</Button> */}
           {error && (
             <Snackbar
               open={Boolean(error)}
@@ -182,6 +198,7 @@ const HomePage: React.FC = () => {
               </Alert>
             </Snackbar>
           )}
+          <CameraCapture />
         </Container>
       )}
     </>
