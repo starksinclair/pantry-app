@@ -122,7 +122,9 @@ const LoginPage = () => {
           type="submit"
           onClick={handleLogin}
         >
-          {isSignUp ? "Register" : " Login"}
+          <Typography color="white">
+            {isSignUp ? "Register" : " Login"}
+          </Typography>
         </Button>
         <Button
           variant="contained"

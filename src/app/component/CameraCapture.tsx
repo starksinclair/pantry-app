@@ -59,7 +59,7 @@ const CameraCapture: React.FC = () => {
           <Image src={capturedImage} alt="Captured" width={640} height={480} />
         )}
       </div>
-      <Button variant="contained" onClick={captureImage}>
+      <Button variant="contained" onClick={captureImage} className="mb-[6em]">
         Capture Image
       </Button>
     </div>

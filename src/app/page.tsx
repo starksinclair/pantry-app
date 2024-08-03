@@ -1,17 +1,9 @@
 // pages/index.tsx
 "use client";
-import React, { useEffect, useState, useRef } from "react";
-import {
-  Container,
-  Button,
-  Alert,
-  Snackbar,
-  Avatar,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  IconButton,
-} from "@mui/material";
+import React, { useEffect, useState, useContext } from "react";
+import { Container, Button, Alert, Snackbar, Typography } from "@mui/material";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
 import PantryList from "./component/PantryList";
 import PantryForm from "./component/PantryForm";
 import LoginPage from "./login";
@@ -24,21 +16,28 @@ import { collection, doc, getDoc, setDoc } from "firebase/firestore";
 import { Analytics } from "@vercel/analytics/react";
 import { blue, deepPurple } from "@mui/material/colors";
 import { Logout } from "@mui/icons-material";
-import { Camera } from "react-camera-pro";
-import Image from "next/image";
-import CameraAltIcon from "@mui/icons-material/CameraAlt";
-import CloseIcon from "@mui/icons-material/Close";
+import { useTheme, ThemeProvider, createTheme } from "@mui/material/styles";
+import AIIcon from "../../public/aiico.png";
 import CameraCapture from "./component/CameraCapture";
+import { ColorModeContext } from "./context/AppContext";
+import Image from "next/image";
+import Recipe from "./component/Recipe";
+import MenuIcon from "@mui/icons-material/Menu";
+import HomeIcon from "@mui/icons-material/Home";
+import FoodBankIcon from "@mui/icons-material/FoodBank";
+import CloseIcon from "@mui/icons-material/Close";
+import Link from "next/link";
+import Header from "./component/Header";
 
 const HomePage: React.FC = () => {
+  const { setIsLoggedIn, setError, setUser, user, isLoggedIn, error } =
+    useContext(ColorModeContext);
   const [openForm, setOpenForm] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-  const camera = useRef(null);
-  const [image, setImage] = useState(null);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  // const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // const [user, setUser] = useState<any>(null);
+  // const [error, setError] = useState<string | null>(null);
+  const [openRecipe, setOpenRecipe] = useState<boolean>(false);
 
   const handleOpenForm = () => {
     setSelectedItem(null);
@@ -48,16 +47,6 @@ const HomePage: React.FC = () => {
 
   const handleCloseForm = () => {
     setOpenForm(false);
-  };
-
-  const handleSignOut = async () => {
-    await signOut(auth)
-      .then(() => {
-        setIsLoggedIn(false);
-      })
-      .catch((error) => {
-        setError(error.message);
-      });
   };
 
   useEffect(() => {
@@ -76,7 +65,7 @@ const HomePage: React.FC = () => {
             photoURL: user.photoURL,
             email: user.email,
           });
-          console.log("New user data saved to database");
+          // console.log("New user data saved to database");
         } else {
           console.log("User already exists in database");
         }
@@ -88,38 +77,22 @@ const HomePage: React.FC = () => {
     setupUser();
   }, [user]);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsLoggedIn(true);
-        setUser(user);
-      } else {
-        setIsLoggedIn(false);
-        setUser(null);
-      }
-    });
+  // useEffect(() => {
+  //   const unsubscribe = onAuthStateChanged(auth, (user) => {
+  //     if (user) {
+  //       setIsLoggedIn(true);
+  //       setUser(user);
+  //     } else {
+  //       setIsLoggedIn(false);
+  //       setUser(null);
+  //     }
+  //   });
 
-    return () => unsubscribe();
-  }, []);
+  //   return () => unsubscribe();
+  // }, []);
 
-  const singleCharacter = auth.currentUser?.email
-    ?.slice(0, 1)
-    .toLocaleUpperCase();
-  console.log(singleCharacter);
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = async () => {
-    setAnchorEl(null);
-    await signOut(auth)
-      .then(() => {
-        setIsLoggedIn(false);
-      })
-      .catch((error) => {
-        setError(error.message);
-      });
+  const handleRecipeClose = () => {
+    setOpenRecipe(false);
   };
   return (
     <>
@@ -128,48 +101,7 @@ const HomePage: React.FC = () => {
         <LoginPage />
       ) : (
         <Container className="flex flex-col h-[100vh]">
-          <div className="flex items-center justify-between">
-            <h1 className="p-4 font-extrabold text-3xl text-center">
-              My Pantry Tracker
-            </h1>
-            {singleCharacter && (
-              <>
-                {" "}
-                <Avatar
-                  sx={{ bgcolor: blue }}
-                  id="demo-positioned-button"
-                  aria-controls={open ? "demo-positioned-menu" : undefined}
-                  aria-haspopup="true"
-                  aria-expanded={open ? "true" : undefined}
-                  onClick={handleClick}
-                >
-                  {singleCharacter}
-                </Avatar>
-                <Menu
-                  id="demo-positioned-menu"
-                  aria-labelledby="demo-positioned-button"
-                  anchorEl={anchorEl}
-                  open={open}
-                  onClose={handleClose}
-                  anchorOrigin={{
-                    vertical: "top",
-                    horizontal: "left",
-                  }}
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "left",
-                  }}
-                >
-                  <MenuItem onClick={handleClose}>
-                    <ListItemIcon>
-                      <Logout fontSize="small" />
-                    </ListItemIcon>
-                    Logout
-                  </MenuItem>
-                </Menu>
-              </>
-            )}
-          </div>
+          <Header />
 
           <Button
             variant="contained"
@@ -179,10 +111,34 @@ const HomePage: React.FC = () => {
           >
             Add New Item
           </Button>
+          <Button
+            color="primary"
+            className="fixed bottom-0 right-0 left-0 z-50 w-full p-1"
+            variant="contained"
+            onClick={() => setOpenRecipe(true)}
+          >
+            <Typography
+              fontSize={30}
+              fontStyle={"italic"}
+              textAlign={"center"}
+              textTransform={"capitalize"}
+              display={"flex"}
+              alignItems={"center"}
+              justifyContent={"center"}
+            >
+              <Image src={AIIcon} alt="AI Icon" width={50} height={50} /> Get
+              Cookin
+            </Typography>
+          </Button>
           <PantryList />
           <PantryForm
             open={openForm}
             handleClose={handleCloseForm}
+            item={selectedItem}
+          />
+          <Recipe
+            open={openRecipe}
+            handleClose={handleRecipeClose}
             item={selectedItem}
           />
           {/* <Button onClick={handleSignOut}>Sign Out</Button> */}
@@ -198,6 +154,7 @@ const HomePage: React.FC = () => {
               </Alert>
             </Snackbar>
           )}
+
           <CameraCapture />
         </Container>
       )}
