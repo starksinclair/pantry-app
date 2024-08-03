@@ -39,7 +39,7 @@ body {
     text-wrap: balance;
   }
 }
-*/ .modal-container {
+.modal-container {
   p {
     font-size: 1rem;
   }
