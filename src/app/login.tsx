@@ -82,7 +82,7 @@ const LoginPage = () => {
       <Card>
         <CardContent>
           <Typography variant="h5" component="div" align="center">
-            Welcome to Pantry App
+            Welcome to PantryVision
           </Typography>
           <Typography sx={{ mb: 1.5 }} color="text.secondary" align="center">
             {isSignUp

@@ -22,13 +22,9 @@ import CameraCapture from "./component/CameraCapture";
 import { ColorModeContext } from "./context/AppContext";
 import Image from "next/image";
 import Recipe from "./component/Recipe";
-import MenuIcon from "@mui/icons-material/Menu";
-import HomeIcon from "@mui/icons-material/Home";
-import FoodBankIcon from "@mui/icons-material/FoodBank";
-import CloseIcon from "@mui/icons-material/Close";
-import Link from "next/link";
 import BarcodeScanner from "./component/BarcodeScanner";
 import Header from "./component/Header";
+import Head from "next/head";
 
 const HomePage: React.FC = () => {
   const { setIsLoggedIn, setError, setUser, user, isLoggedIn, error } =
@@ -137,8 +133,8 @@ const HomePage: React.FC = () => {
 
           {/* <BarcodeScanner /> */}
           <PantryList />
-          <div className="mt-[5em]">
-            <p>i</p>
+          <div className="mt-[5em] ">
+            <p style={{ color: "#333" }}>i</p>
           </div>
           <PantryForm
             open={openForm}

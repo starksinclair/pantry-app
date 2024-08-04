@@ -110,9 +110,7 @@ const Header: React.FC = () => {
           </List>
         </Box>
       </Drawer>
-      <h1 className="p-4 font-extrabold text-2xl text-center">
-        My Pantry Tracker
-      </h1>
+      <h1 className="p-4 font-extrabold text-2xl text-center">PantryVision</h1>
       {singleCharacter && (
         <>
           <Avatar
