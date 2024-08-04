@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Box, IconButton } from "@mui/material";
+import { Alert, Box, IconButton, Snackbar } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
@@ -17,6 +17,8 @@ import { db, auth } from "../firebase";
 const CameraCapture: React.FC = () => {
   const [image, setImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  //   const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState("");
 
   const handleCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -70,27 +72,31 @@ const CameraCapture: React.FC = () => {
       "category": "Category of the food (e.g., fruit, vegetable, dairy, meat)",
       "expirationDate": "Estimated expiration date if visible, or 'Not visible' if not shown"
     }`;
-    const response = await model.generateContent([prompt, imagePart]);
-    const responseText = response.response.text();
+    try {
+      const response = await model.generateContent([prompt, imagePart]);
+      const responseText = await response.response.text();
+      const jsonResponse = JSON.parse(responseText);
 
-    const jsonResponse = JSON.parse(responseText);
-    console.log("Parsed JSON response:", jsonResponse);
-
-    setImage(null);
-    // console.log(response.response.text());
-    if (!auth.currentUser) {
-      console.error("No authenticated user");
-      return;
+      if (!auth.currentUser) {
+        console.error("No authenticated user");
+        return;
+      }
+      const pantriesRef = collection(db, "pantries");
+      const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
+      const itemsRef = collection(pantryDoc, "items");
+      await addDoc(itemsRef, {
+        ...jsonResponse,
+        updatedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      });
+      console.log("item added");
+      setSuccess("Food Item Has Been Added");
+    } catch (error) {
+      console.error("Error in handleUpload:", error);
+      setSuccess("");
+    } finally {
+      setImage(null);
     }
-    const pantriesRef = collection(db, "pantries");
-    const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
-    const itemsRef = collection(pantryDoc, "items");
-    await addDoc(itemsRef, {
-      ...jsonResponse,
-      updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-    });
-    console.log("item added");
   };
 
   return (
@@ -110,6 +116,16 @@ const CameraCapture: React.FC = () => {
       >
         <CameraAltIcon fontSize="large" />
       </IconButton>
+      <Snackbar
+        open={Boolean(success)}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        onClose={() => setSuccess("")}
+      >
+        <Alert onClose={() => setSuccess("")} severity="success">
+          {success}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

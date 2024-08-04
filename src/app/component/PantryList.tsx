@@ -218,8 +218,8 @@ const PantryList: React.FC = () => {
       {notification && (
         <Snackbar
           open={Boolean(notification)}
-          //   autoHideDuration={10000}
-          anchorOrigin={{ vertical: "top", horizontal: "left" }}
+          autoHideDuration={6000}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
           onClose={() => setNotification("")}
         >
           <Alert severity="warning" onClose={() => setNotification("")}>
