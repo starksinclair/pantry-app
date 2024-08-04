@@ -1,68 +1,116 @@
-// src/components/CameraCapture.tsx
 import React, { useRef, useState } from "react";
-import { Button } from "@mui/material";
-import Image from "next/image";
+import { Box, IconButton } from "@mui/material";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { getStorage, ref, uploadBytes } from "firebase/storage";
+import { db, auth } from "../firebase";
 
 const CameraCapture: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [image, setImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const startCamera = async () => {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
+  const handleCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    const storage = getStorage();
+    const storageRef = ref(storage, `images/${file?.name}`);
+    const metadata = {
+      contentType: "image/jpeg",
+    };
+    if (file) {
+      uploadBytes(storageRef, file, metadata).then((snapshot) => {
+        console.log("Uploaded a blob or file!");
+      });
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64String = e.target?.result as string;
+        setImage(base64String);
+        await handleUpload(base64String); // Call handleUpload after setting the image
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const captureImage = () => {
-    if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext("2d");
-      if (context) {
-        context.drawImage(
-          videoRef.current,
-          0,
-          0,
-          canvasRef.current.width,
-          canvasRef.current.height
-        );
-        const imageData = canvasRef.current.toDataURL("image/png");
-        setCapturedImage(imageData);
-        // Stop the camera stream
-        const stream = videoRef.current.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
-      }
+  const handleUpload = async (base64String: string) => {
+    // Initialize GoogleGenerativeAI with your API_KEY.
+    const API_KEY = process.env.API_KEY;
+    if (!API_KEY) {
+      throw new Error("API_KEY is not defined in environment variables");
     }
+    const genAI = new GoogleGenerativeAI(API_KEY);
+
+    // Converts base64 image to a GoogleGenerativeAI.Part object.
+    function base64ToGenerativePart(base64String: string, mimeType: string) {
+      return {
+        inlineData: {
+          data: base64String.split(",")[1],
+          mimeType,
+        },
+      };
+    }
+
+    const imagePart = base64ToGenerativePart(base64String, "image/jpeg");
+    console.log(imagePart);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-pro",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+    const prompt = `Analyze the image and provide details about the food item shown. Return a JSON object with the following structure:
+    {
+      "name": "Name of the food item",
+      "quantity": "Number of items in the image",
+      "category": "Category of the food (e.g., fruit, vegetable, dairy, meat)",
+      "expirationDate": "Estimated expiration date if visible, or 'Not visible' if not shown"
+    }`;
+    const response = await model.generateContent([prompt, imagePart]);
+    const responseText = response.response.text();
+
+    const jsonResponse = JSON.parse(responseText);
+    console.log("Parsed JSON response:", jsonResponse);
+
+    setImage(null);
+    // console.log(response.response.text());
+    if (!auth.currentUser) {
+      console.error("No authenticated user");
+      return;
+    }
+    const pantriesRef = collection(db, "pantries");
+    const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
+    const itemsRef = collection(pantryDoc, "items");
+    await addDoc(itemsRef, {
+      ...jsonResponse,
+      updatedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+    });
+    console.log("item added");
   };
-  console.log(capturedImage);
 
   return (
-    <div>
-      <Button variant="contained" onClick={startCamera}>
-        Start Camera
-      </Button>
-      <div>
-        <video
-          ref={videoRef}
-          style={{ width: "100%", display: capturedImage ? "none" : "block" }}
-        />
-        <canvas
-          ref={canvasRef}
-          width="640"
-          height="480"
-          style={{ display: "none" }}
-        />
-        {capturedImage && (
-          <Image src={capturedImage} alt="Captured" width={640} height={480} />
-        )}
-      </div>
-      <Button variant="contained" onClick={captureImage} className="mb-[6em]">
-        Capture Image
-      </Button>
-    </div>
+    <Box>
+      <input
+        title="Capture Image"
+        accept="image/*"
+        type="file"
+        onChange={handleCapture}
+        style={{ display: "none" }}
+        ref={fileInputRef}
+      />
+      <IconButton
+        color="primary"
+        aria-label="capture image"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <CameraAltIcon fontSize="large" />
+      </IconButton>
+    </Box>
   );
 };
 

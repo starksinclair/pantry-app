@@ -86,7 +86,9 @@ Is there anything specific to consider about the nutritional value of ${item.nam
     <>
       <Card variant="outlined" sx={cardStyle}>
         <CardContent>
-          <Typography variant="h6">{item.name}</Typography>
+          <Typography variant="h6" className="w-[80%]">
+            {item.name}
+          </Typography>
           <Typography variant="body2">Quantity: {item.quantity}</Typography>
           <Typography variant="body2">Category: {item.category}</Typography>
           <Typography variant="body2" style={expirationStyle}>

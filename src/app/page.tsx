@@ -27,6 +27,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import FoodBankIcon from "@mui/icons-material/FoodBank";
 import CloseIcon from "@mui/icons-material/Close";
 import Link from "next/link";
+import BarcodeScanner from "./component/BarcodeScanner";
 import Header from "./component/Header";
 
 const HomePage: React.FC = () => {
@@ -103,14 +104,17 @@ const HomePage: React.FC = () => {
         <Container className="flex flex-col h-[100vh]">
           <Header />
 
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleOpenForm}
-            className="mb-4"
-          >
-            Add New Item
-          </Button>
+          <div className="flex flex-row justify-between">
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleOpenForm}
+              className="mb-4"
+            >
+              Add New Item
+            </Button>
+            <CameraCapture />
+          </div>
           <Button
             color="primary"
             className="fixed bottom-0 right-0 left-0 z-50 w-full p-1"
@@ -130,7 +134,12 @@ const HomePage: React.FC = () => {
               Cookin
             </Typography>
           </Button>
+
+          {/* <BarcodeScanner /> */}
           <PantryList />
+          <div className="mt-[5em]">
+            <p>i</p>
+          </div>
           <PantryForm
             open={openForm}
             handleClose={handleCloseForm}
@@ -154,8 +163,6 @@ const HomePage: React.FC = () => {
               </Alert>
             </Snackbar>
           )}
-
-          <CameraCapture />
         </Container>
       )}
     </>
@@ -163,3 +170,4 @@ const HomePage: React.FC = () => {
 };
 
 export default HomePage;
+// sk-0fvWTyLHyGdeWfeWjmFjkpa0F3eF0nYB-f3Y4boZ9xT3BlbkFJykwxlxVTqsif7osaB5dH2EQ5nRTB1i_rbp6uA_ivAA

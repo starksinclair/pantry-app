@@ -116,7 +116,9 @@ const Header: React.FC = () => {
       {singleCharacter && (
         <>
           <Avatar
-            sx={{ bgcolor: blue[500] }}
+            className={
+              theme.palette.mode === "dark" ? "dark" : "light bg-blue-500"
+            }
             id="demo-positioned-button"
             aria-controls={open ? "demo-positioned-menu" : undefined}
             aria-haspopup="true"

@@ -7,7 +7,7 @@ import {
 } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { PaletteMode } from "@mui/material";
-import { amber, grey, deepOrange } from "@mui/material/colors";
+import { blue, grey, deepOrange } from "@mui/material/colors";
 import { collection, doc, getDoc, onSnapshot, query } from "firebase/firestore";
 import { auth, db, onAuthStateChanged } from "../firebase";
 
@@ -51,6 +51,9 @@ const getDesignTokens = (mode: PaletteMode) => ({
           // palette values for light mode
           //   primary: amber,
           //   divider: amber[200],
+          bgBlue500: {
+            backgroundColor: blue[500],
+          },
           text: {
             primary: grey[900],
             secondary: grey[800],
@@ -63,6 +66,9 @@ const getDesignTokens = (mode: PaletteMode) => ({
           background: {
             default: "#333",
             paper: "#333",
+          },
+          bgBlue500: {
+            backgroundColor: deepOrange,
           },
           text: {
             primary: "#fff",
