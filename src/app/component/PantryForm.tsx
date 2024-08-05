@@ -11,17 +11,11 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Alert,
+  Snackbar,
 } from "@mui/material";
-import { auth, db } from "../firebase";
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
+import { serverTimestamp } from "firebase/firestore";
+import { ColorModeContext } from "../context/AppContext";
 import { categoryOptions } from "./PantryList";
 interface PantryFormProps {
   open: boolean;
@@ -37,6 +31,8 @@ interface PantryFormProps {
 }
 
 const PantryForm: React.FC<PantryFormProps> = ({ open, handleClose, item }) => {
+  const { updateItem, addItem, success, setSuccess } =
+    React.useContext(ColorModeContext);
   const [name, setName] = useState<string>("");
   const [quantity, setQuantity] = useState<string>("");
   const [category, setCategory] = useState<string>("");
@@ -57,13 +53,6 @@ const PantryForm: React.FC<PantryFormProps> = ({ open, handleClose, item }) => {
   }, [item]);
 
   const handleSubmit = async () => {
-    if (!auth.currentUser) {
-      console.error("No authenticated user");
-      return;
-    }
-    const pantriesRef = collection(db, "pantries");
-    const pantryDoc = doc(pantriesRef, auth.currentUser.uid);
-    const itemsRef = collection(pantryDoc, "items");
     const data = {
       name,
       quantity: parseInt(quantity),
@@ -72,16 +61,9 @@ const PantryForm: React.FC<PantryFormProps> = ({ open, handleClose, item }) => {
       updatedAt: serverTimestamp(),
     };
     if (!item) {
-      const pantryDocSnap = await getDoc(pantryDoc);
-
-      if (!pantryDocSnap.exists()) {
-        await setDoc(pantryDoc, { userID: auth.currentUser.uid });
-      }
-      await addDoc(itemsRef, { ...data, createdAt: serverTimestamp() });
+      addItem({ ...data, createdAt: serverTimestamp() as any });
     } else {
-      // Handle item update logic here
-      await updateDoc(doc(itemsRef, item.id), data);
-      console.log("item", item.id);
+      updateItem(item.id, data);
     }
     setName("");
     setQuantity("");
@@ -156,6 +138,16 @@ const PantryForm: React.FC<PantryFormProps> = ({ open, handleClose, item }) => {
           {item ? "Update" : "Add"}
         </Button>
       </DialogActions>
+      <Snackbar
+        open={Boolean(success)}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        onClose={() => setSuccess("")}
+      >
+        <Alert onClose={() => setSuccess("")} severity="success">
+          {success}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };

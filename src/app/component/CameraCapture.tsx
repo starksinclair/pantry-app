@@ -13,12 +13,13 @@ import {
 } from "firebase/firestore";
 import { getStorage, ref, uploadBytes } from "firebase/storage";
 import { db, auth } from "../firebase";
-
+import { ColorModeContext } from "../context/AppContext";
 const CameraCapture: React.FC = () => {
+  const { success, addItem, setSuccess } = React.useContext(ColorModeContext);
   const [image, setImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   //   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState("");
+  //   const [success, setSuccess] = useState("");
 
   const handleCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -76,21 +77,7 @@ const CameraCapture: React.FC = () => {
       const response = await model.generateContent([prompt, imagePart]);
       const responseText = await response.response.text();
       const jsonResponse = JSON.parse(responseText);
-
-      if (!auth.currentUser) {
-        console.error("No authenticated user");
-        return;
-      }
-      const pantriesRef = collection(db, "pantries");
-      const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
-      const itemsRef = collection(pantryDoc, "items");
-      await addDoc(itemsRef, {
-        ...jsonResponse,
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      });
-      console.log("item added");
-      setSuccess("Food Item Has Been Added");
+      await addItem(jsonResponse);
     } catch (error) {
       console.error("Error in handleUpload:", error);
       setSuccess("");

@@ -15,15 +15,6 @@ import {
 } from "@mui/material";
 import PantryItem from "./PantryItem";
 import PantryForm from "./PantryForm";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  onSnapshot,
-  query,
-} from "firebase/firestore";
-import { auth, db } from "../firebase";
 import { ColorModeContext } from "../context/AppContext";
 
 interface PantryItem {
@@ -60,7 +51,8 @@ export const categoryOptions = [
 ];
 
 const PantryList: React.FC = () => {
-  const { items } = useContext(ColorModeContext);
+  const { items, success, setSuccess, deleteItem } =
+    useContext(ColorModeContext);
   //   const [items, setItems] = useState<PantryItem[]>([]);
   const [search, setSearch] = useState<string>("");
   const [editItem, setEditItem] = useState<PantryItem | null>(null);
@@ -120,12 +112,7 @@ const PantryList: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const pantriesRef = collection(db, "pantries");
-      const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
-      const itemsRef = collection(pantryDoc, "items");
-      const itemDocRef = doc(itemsRef, id);
-
-      await deleteDoc(itemDocRef);
+      deleteItem(id);
       console.log("Deleted item with id:", id);
     } catch (error) {
       console.error("Error deleting item:", error);
@@ -227,6 +214,16 @@ const PantryList: React.FC = () => {
           </Alert>
         </Snackbar>
       )}
+      <Snackbar
+        open={Boolean(success)}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        onClose={() => setSuccess("")}
+      >
+        <Alert onClose={() => setSuccess("")} severity="success">
+          {success}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

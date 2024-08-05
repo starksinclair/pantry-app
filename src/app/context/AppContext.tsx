@@ -15,6 +15,10 @@ import {
   onSnapshot,
   query,
   setDoc,
+  addDoc,
+  deleteDoc,
+  serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { auth, db, onAuthStateChanged } from "../firebase";
 
@@ -48,6 +52,11 @@ export const ColorModeContext = React.createContext({
   setError: (error: string | null) => {},
   setIsLoggedIn: (isLoggedIn: boolean) => {},
   setUser: (user: user | null) => {},
+  deleteItem: (itemId: string) => {},
+  addItem: (newItem: Omit<PantryItem, "id">) => {},
+  updateItem: (itemId: string, updatedData: Partial<PantryItem>) => {},
+  success: "",
+  setSuccess: (success: string) => {},
 });
 
 const getDesignTokens = (mode: PaletteMode) => ({
@@ -89,6 +98,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState("");
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -169,6 +179,73 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [createPantryForNewUser]);
 
+  const addItem = React.useCallback(async (newItem: Omit<PantryItem, "id">) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.log("No authenticated user");
+        return;
+      }
+
+      const pantriesRef = collection(db, "pantries");
+      const itemsRef = collection(pantriesRef, user.uid, "items");
+
+      const docRef = await addDoc(itemsRef, {
+        ...newItem,
+        createdAt: serverTimestamp(),
+      });
+      setSuccess("Food Item added successfully");
+
+      console.log("Food Item added with ID: ", docRef.id);
+    } catch (error) {
+      console.error("Error adding item:", error);
+    }
+  }, []);
+
+  const updateItem = React.useCallback(
+    async (itemId: string, updatedData: Partial<PantryItem>) => {
+      try {
+        const user = auth.currentUser;
+        if (!user) {
+          console.log("No authenticated user");
+          return;
+        }
+
+        const pantriesRef = collection(db, "pantries");
+        const itemDoc = doc(pantriesRef, user.uid, "items", itemId);
+
+        await updateDoc(itemDoc, {
+          ...updatedData,
+          updatedAt: serverTimestamp(),
+        });
+        setSuccess("Food Item updated successfully");
+        console.log("Food Item updated: ", itemId);
+      } catch (error) {
+        console.error("Error updating item:", error);
+      }
+    },
+    []
+  );
+
+  const deleteItem = React.useCallback(async (itemId: string) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.log("No authenticated user");
+        return;
+      }
+
+      const pantriesRef = collection(db, "pantries");
+      const itemDoc = doc(pantriesRef, user.uid, "items", itemId);
+
+      await deleteDoc(itemDoc);
+      setSuccess("Food Item deleted successfully");
+      console.log("Item deleted: ", itemId);
+    } catch (error) {
+      console.error("Error deleting item:", error);
+    }
+  }, []);
+
   React.useEffect(() => {
     let unsubscribe: (() => void) | undefined;
 
@@ -205,6 +282,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setError,
         setIsLoggedIn,
         setUser,
+        addItem,
+        deleteItem,
+        updateItem,
+        success,
+        setSuccess,
       }}
     >
       <MuiThemeProvider theme={theme}>{children}</MuiThemeProvider>
