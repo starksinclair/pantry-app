@@ -8,7 +8,14 @@ import {
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { PaletteMode } from "@mui/material";
 import { blue, grey, deepOrange } from "@mui/material/colors";
-import { collection, doc, getDoc, onSnapshot, query } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  setDoc,
+} from "firebase/firestore";
 import { auth, db, onAuthStateChanged } from "../firebase";
 
 interface PantryItem {
@@ -119,57 +126,73 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const [items, setItems] = React.useState<PantryItem[]>([]);
 
+  const createPantryForNewUser = React.useCallback(async (user: any) => {
+    const pantriesRef = collection(db, "pantries");
+    const pantryDoc = doc(pantriesRef, user.uid);
+
+    try {
+      await setDoc(pantryDoc, { userID: user.uid }, { merge: true });
+      console.log("Pantry created for new user");
+    } catch (error) {
+      console.error("Error creating pantry for new user:", error);
+    }
+  }, []);
+
+  const fetchPantryData = React.useCallback(async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.log("No authenticated user");
+        return;
+      }
+
+      const pantriesRef = collection(db, "pantries");
+      const pantryDoc = doc(pantriesRef, user.uid);
+
+      const pantryDocSnap = await getDoc(pantryDoc);
+      if (!pantryDocSnap.exists()) {
+        await createPantryForNewUser(user);
+      }
+
+      const itemsRef = collection(pantriesRef, user.uid, "items");
+      const q = query(itemsRef);
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const itemsData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as PantryItem[];
+        setItems(itemsData);
+      });
+      return unsubscribe;
+    } catch (error) {
+      console.error("Error fetching pantry data:", error);
+    }
+  }, [createPantryForNewUser]);
+
   React.useEffect(() => {
-    const fetchPantryData = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) {
-          console.log("No authenticated user");
-          return;
-        }
+    let unsubscribe: (() => void) | undefined;
 
-        const pantriesRef = collection(db, "pantries");
-        const pantryDoc = doc(pantriesRef, user.uid);
-        // console.log("Current user ID:", user.uid);
-
-        const pantryDocSnap = await getDoc(pantryDoc);
-        if (pantryDocSnap.exists()) {
-          //   console.log("Pantry document exists");
-          const docId = pantryDocSnap.data().userID;
-          //   console.log("Document ID:", docId);
-          if (docId === user.uid) {
-            const itemsRef = collection(pantriesRef, docId, "items");
-            const q = query(itemsRef);
-            const listen = onSnapshot(q, (snapshot) => {
-              const itemsData = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-              })) as PantryItem[];
-              //   console.log("Fetched items:", itemsData);
-              setItems(itemsData);
-            });
-            return () => listen();
-          }
-        } else {
-          console.log("Pantry document does not exist");
+    const authStateChanged = async (user: any) => {
+      if (user) {
+        const unsub = await fetchPantryData();
+        unsubscribe = unsub;
+      } else {
+        setItems([]);
+        if (unsubscribe) {
+          unsubscribe();
         }
-      } catch (error) {
-        console.error("Error fetching pantry data:", error);
       }
     };
 
-    // Listen for auth state changes
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        fetchPantryData();
-      } else {
-        setItems([]);
-      }
-    });
+    const authUnsubscribe = onAuthStateChanged(auth, authStateChanged);
 
-    // Cleanup function
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      authUnsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [fetchPantryData]);
 
   return (
     <ColorModeContext.Provider

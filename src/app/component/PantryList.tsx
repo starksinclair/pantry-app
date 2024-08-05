@@ -155,8 +155,8 @@ const PantryList: React.FC = () => {
 
   useEffect(() => {
     checkExpiryDates();
-    // const interval = setInterval(checkExpiryDates, 24 * 60 * 60 * 1000);
-    // return () => clearInterval(interval);
+    const interval = setInterval(checkExpiryDates, 24 * 60 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [items, checkExpiryDates]);
 
   return (
