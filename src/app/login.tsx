@@ -24,6 +24,7 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "./firebase";
@@ -62,18 +63,13 @@ const LoginPage = () => {
   };
   //   const userCred = await getRedirectResult(auth)
   const handleGoogleLogin = async () => {
+    const g_auth = getAuth();
     try {
-      await signInWithPopup(auth, googleProvider)
-        .then((result) => {
-          router.push("/");
-          console.log("result", result);
-        })
-
-        .catch((error) => {
-          console.log("error", error);
-        });
-      //   console.log("userCred", userCred);
+      const result = await signInWithPopup(g_auth, googleProvider);
+      router.push("/");
+      console.log("result", result);
     } catch (err: any) {
+      console.log("error", err);
       setError(err.message);
     }
   };

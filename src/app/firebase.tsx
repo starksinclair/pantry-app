@@ -47,4 +47,5 @@ export {
   signInWithEmailAndPassword,
   onAuthStateChanged,
   signOut,
+  getAuth,
 };

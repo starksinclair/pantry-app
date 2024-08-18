@@ -75,9 +75,9 @@ const CameraCapture: React.FC = () => {
     }`;
     try {
       const response = await model.generateContent([prompt, imagePart]);
-      const responseText = await response.response.text();
+      const responseText = response.response.text();
       const jsonResponse = JSON.parse(responseText);
-      await addItem(jsonResponse);
+      addItem(jsonResponse);
     } catch (error) {
       console.error("Error in handleUpload:", error);
       setSuccess("");
