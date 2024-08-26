@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Pantry Management App
 
-## Getting Started
+## Overview
 
-First, run the development server:
+The Pantry Management App is a comprehensive tool designed to help users keep track of their food items and efficiently manage their pantry. With features like barcode scanning, image-based food item recognition, AI-powered food analysis, and recipe generation, this app makes it easier to reduce food waste and organize your pantry.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **Barcode Scanning**: Quickly add items to your pantry by scanning their barcodes.
+- **Image Recognition**: Use the camera to capture images of food items, and the app will analyze and categorize them using AI.
+- **AI-Powered Analysis**: The app provides detailed information about food items, including their name, category, and estimated expiration date.
+- **Recipe Generation**: Automatically generate random recipes based on the food items available in your pantry.
+- **User Authentication**: Secure login using Google Authentication or email and password.
+- **Firebase Integration**: Real-time data synchronization using Firebase for a seamless experience.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Installation
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### Prerequisites
 
-## Learn More
+- Node.js: Ensure that you have Node.js installed on your machine.
+- Firebase Account: Set up a Firebase project and obtain your configuration details.
+- Google Gemini API Key: Obtain an API key from Google to enable AI features.
 
-To learn more about Next.js, take a look at the following resources:
+### Steps
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+1. Clone the Repository:
+   ```bash
+   git clone https://github.com/yourusername/pantry-management-app.git
+   cd pantry-management-app
