@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { Button, Typography } from "@mui/material";
-import { collection, doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, addToSubcollection } from "../firebase";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 
 const BarcodeScanner: React.FC = () => {
@@ -21,18 +20,12 @@ const BarcodeScanner: React.FC = () => {
     );
     const itemDetails = await response.json();
 
-    // Save the item details in Firebase
-    const pantriesRef = collection(db, "pantries");
-    const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
-    const itemsRef = collection(pantryDoc, "items");
-    const newItemRef = doc(itemsRef);
-
-    await setDoc(newItemRef, {
+    // Save the item details via server API
+    await addToSubcollection('items', {
       name: itemDetails.name,
       category: itemDetails.category,
       expirationDate: itemDetails.expirationDate,
       quantity: 1,
-      createdAt: Date.now(),
     });
   };
 

@@ -1,15 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  onSnapshot,
-  query,
-} from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, fetchSubcollection, deleteSubcollectionDoc } from "../firebase";
 import Accordion from "@mui/material/Accordion";
 import AccordionActions from "@mui/material/AccordionActions";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -37,27 +29,8 @@ const RecipePage: React.FC = () => {
         console.log("No authenticated user");
         return;
       }
-      const pantriesRef = collection(db, "pantries");
-      const pantryDoc = doc(pantriesRef, user.uid);
-      const pantryDocSnap = await getDoc(pantryDoc);
-      if (pantryDocSnap.exists()) {
-        const docId = pantryDocSnap.data().userID;
-        if (docId === user.uid) {
-          const recipesCollection = collection(pantriesRef, docId, "recipes");
-          const q = query(recipesCollection);
-          const listen = onSnapshot(q, (snapshot) => {
-            const itemsData = snapshot.docs.map((doc) => ({
-              id: doc.id,
-              ...doc.data(),
-            })) as Recipe[];
-            // console.log("Fetched items:", itemsData);
-            setRecipes(itemsData);
-          });
-          return () => listen();
-        } else {
-          console.log("Pantry document does not exist");
-        }
-      }
+      const itemsData = await fetchSubcollection('recipes');
+      setRecipes(itemsData as Recipe[]);
     };
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
@@ -78,11 +51,7 @@ const RecipePage: React.FC = () => {
       return;
     }
     try {
-      const pantriesRef = collection(db, "pantries");
-      const pantryDoc = doc(pantriesRef, user.uid);
-      const recipeRef = collection(pantryDoc, "recipes");
-      const recipeDoc = doc(recipeRef, id);
-      await deleteDoc(recipeDoc);
+      await deleteSubcollectionDoc('recipes', id);
     } catch (error) {
       console.error("Error deleting recipe:", error);
     }

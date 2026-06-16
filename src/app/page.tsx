@@ -7,12 +7,12 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 import PantryList from "./component/PantryList";
 import PantryForm from "./component/PantryForm";
 import LoginPage from "./login";
-import { onAuthStateChanged, auth, signOut, db } from "./firebase";
+import { onAuthStateChanged, auth, signOut, createOrUpdateUserProfile } from "./firebase";
 import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
-import { collection, doc, getDoc, setDoc } from "firebase/firestore";
+// firestore client usage removed; using server API for user profiles
 import { Analytics } from "@vercel/analytics/react";
 import { blue, deepPurple } from "@mui/material/colors";
 import { Logout } from "@mui/icons-material";
@@ -51,21 +51,7 @@ const HomePage: React.FC = () => {
       if (!user || !user.uid) return;
 
       try {
-        const usersRef = collection(db, "users");
-        const userDoc = doc(usersRef, user.uid);
-        const userDocSnap = await getDoc(userDoc);
-
-        if (!userDocSnap.exists()) {
-          await setDoc(userDoc, {
-            uid: user.uid,
-            name: user.displayName,
-            photoURL: user.photoURL,
-            email: user.email,
-          });
-          // console.log("New user data saved to database");
-        } else {
-          console.log("User already exists in database");
-        }
+        await createOrUpdateUserProfile({ name: user.displayName, photoURL: user.photoURL, email: user.email });
       } catch (error) {
         console.error("Error setting up data:", error);
       }

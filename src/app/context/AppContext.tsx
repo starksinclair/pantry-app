@@ -8,19 +8,7 @@ import {
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { PaletteMode } from "@mui/material";
 import { blue, grey, deepOrange } from "@mui/material/colors";
-import {
-  collection,
-  doc,
-  getDoc,
-  onSnapshot,
-  query,
-  setDoc,
-  addDoc,
-  deleteDoc,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
-import { auth, db, onAuthStateChanged } from "../firebase";
+import { auth, onAuthStateChanged, fetchSubcollection, addToSubcollection, updateSubcollectionDoc, deleteSubcollectionDoc, createOrUpdateUserProfile } from "../firebase";
 
 interface PantryItem {
   id: string;
@@ -137,43 +125,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = React.useState<PantryItem[]>([]);
 
   const createPantryForNewUser = React.useCallback(async (user: any) => {
-    const pantriesRef = collection(db, "pantries");
-    const pantryDoc = doc(pantriesRef, user.uid);
-
     try {
-      await setDoc(pantryDoc, { userID: user.uid }, { merge: true });
-      console.log("Pantry created for new user");
+      await createOrUpdateUserProfile({ name: user.displayName, email: user.email, photoURL: user.photoURL });
+      console.log("User profile created/updated for new user");
     } catch (error) {
-      console.error("Error creating pantry for new user:", error);
+      console.error("Error creating user profile for new user:", error);
     }
   }, []);
 
   const fetchPantryData = React.useCallback(async () => {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        console.log("No authenticated user");
-        return;
-      }
-
-      const pantriesRef = collection(db, "pantries");
-      const pantryDoc = doc(pantriesRef, user.uid);
-
-      const pantryDocSnap = await getDoc(pantryDoc);
-      if (!pantryDocSnap.exists()) {
-        await createPantryForNewUser(user);
-      }
-
-      const itemsRef = collection(pantriesRef, user.uid, "items");
-      const q = query(itemsRef);
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const itemsData = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as PantryItem[];
-        setItems(itemsData);
-      });
-      return unsubscribe;
+      const itemsData = await fetchSubcollection('items');
+      setItems(itemsData as PantryItem[]);
+      return undefined;
     } catch (error) {
       console.error("Error fetching pantry data:", error);
     }
@@ -181,22 +145,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = React.useCallback(async (newItem: Omit<PantryItem, "id">) => {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        console.log("No authenticated user");
-        return;
-      }
-
-      const pantriesRef = collection(db, "pantries");
-      const itemsRef = collection(pantriesRef, user.uid, "items");
-
-      const docRef = await addDoc(itemsRef, {
-        ...newItem,
-        createdAt: serverTimestamp(),
-      });
+      await addToSubcollection('items', { ...newItem });
       setSuccess("Food Item added successfully");
-
-      console.log("Food Item added with ID: ", docRef.id);
+      // refresh list
+      const itemsData = await fetchSubcollection('items');
+      setItems(itemsData as PantryItem[]);
     } catch (error) {
       console.error("Error adding item:", error);
     }
@@ -205,21 +158,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateItem = React.useCallback(
     async (itemId: string, updatedData: Partial<PantryItem>) => {
       try {
-        const user = auth.currentUser;
-        if (!user) {
-          console.log("No authenticated user");
-          return;
-        }
-
-        const pantriesRef = collection(db, "pantries");
-        const itemDoc = doc(pantriesRef, user.uid, "items", itemId);
-
-        await updateDoc(itemDoc, {
-          ...updatedData,
-          updatedAt: serverTimestamp(),
-        });
+        await updateSubcollectionDoc('items', itemId, updatedData as any);
         setSuccess("Food Item updated successfully");
-        console.log("Food Item updated: ", itemId);
+        const itemsData = await fetchSubcollection('items');
+        setItems(itemsData as PantryItem[]);
       } catch (error) {
         console.error("Error updating item:", error);
       }
@@ -229,18 +171,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteItem = React.useCallback(async (itemId: string) => {
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        console.log("No authenticated user");
-        return;
-      }
-
-      const pantriesRef = collection(db, "pantries");
-      const itemDoc = doc(pantriesRef, user.uid, "items", itemId);
-
-      await deleteDoc(itemDoc);
+      await deleteSubcollectionDoc('items', itemId);
       setSuccess("Food Item deleted successfully");
-      console.log("Item deleted: ", itemId);
+      const itemsData = await fetchSubcollection('items');
+      setItems(itemsData as PantryItem[]);
     } catch (error) {
       console.error("Error deleting item:", error);
     }

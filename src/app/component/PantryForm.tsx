@@ -14,7 +14,6 @@ import {
   Alert,
   Snackbar,
 } from "@mui/material";
-import { serverTimestamp } from "firebase/firestore";
 import { ColorModeContext } from "../context/AppContext";
 import { categoryOptions } from "./PantryList";
 interface PantryFormProps {
@@ -58,10 +57,9 @@ const PantryForm: React.FC<PantryFormProps> = ({ open, handleClose, item }) => {
       quantity: parseInt(quantity),
       category,
       expirationDate,
-      updatedAt: serverTimestamp(),
     };
     if (!item) {
-      addItem({ ...data, createdAt: serverTimestamp() as any });
+      addItem({ ...data } as any);
     } else {
       updateItem(item.id, data);
     }

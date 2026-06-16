@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Deny all by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users can only read/write their own user profile
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+      
+      // Validation: ensure uid matches
+      allow create: if request.auth.uid == userId && 
+        request.resource.data.uid == userId;
+      allow update: if request.auth.uid == userId &&
+        request.resource.data.uid == userId;
+    }
+
+    // Users can only read/write their own pantry and subcollections (items, recipes)
+    match /pantries/{userId}/{document=**} {
+      allow read, write: if request.auth.uid == userId;
+      
+      // Validate required fields for items
+      match /items/{itemId} {
+        allow read, write: if request.auth.uid == userId;
+        allow create: if request.auth.uid == userId && 
+          request.resource.data.keys().hasAll(['name', 'quantity', 'category']) &&
+          request.resource.data.name is string &&
+          request.resource.data.quantity is number &&
+          request.resource.data.category is string;
+      }
+      
+      // Validate required fields for recipes
+      match /recipes/{recipeId} {
+        allow read, write: if request.auth.uid == userId;
+        allow create: if request.auth.uid == userId && 
+          request.resource.data.keys().hasAll(['ingredients', 'instructions']) &&
+          request.resource.data.ingredients is string &&
+          request.resource.data.instructions is string;
+      }
+    }
+  }
+}

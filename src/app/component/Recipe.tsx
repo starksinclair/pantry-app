@@ -19,8 +19,7 @@ import { ColorModeContext } from "../context/AppContext";
 import Markdown from "react-markdown";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import remarkGfm from "remark-gfm";
-import { addDoc, collection, deleteDoc, doc } from "firebase/firestore";
-import { auth, db } from "../firebase";
+import { auth, addToSubcollection, deleteSubcollectionDoc } from "../firebase";
 
 interface RecipeProps {
   open: boolean;
@@ -93,11 +92,8 @@ const Recipe: React.FC<RecipeProps> = ({ open, handleClose }) => {
       console.error("No authenticated user");
       return;
     }
-    const pantriesRef = collection(db, "pantries");
-    const pantryDoc = doc(pantriesRef, auth.currentUser?.uid);
-    const recipeRef = collection(pantryDoc, "recipes");
-    const docRef = await addDoc(recipeRef, newRecipe);
-    setRecipeId(docRef.id);
+    const res = await addToSubcollection('recipes', newRecipe as any);
+    setRecipeId(res.id);
     setSaved(true);
   };
 
@@ -106,11 +102,7 @@ const Recipe: React.FC<RecipeProps> = ({ open, handleClose }) => {
       console.error("No recipe ID or authenticated user");
       return;
     }
-    const pantriesRef = collection(db, "pantries");
-    const pantryDoc = doc(pantriesRef, auth.currentUser.uid);
-    const recipeRef = collection(pantryDoc, "recipes");
-    const recipeDoc = doc(recipeRef, recipeId);
-    await deleteDoc(recipeDoc);
+    await deleteSubcollectionDoc('recipes', recipeId);
     setRecipeId(null);
     setSaved(false);
   };

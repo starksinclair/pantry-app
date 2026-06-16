@@ -2,17 +2,9 @@ import React, { useRef, useState } from "react";
 import { Alert, Box, IconButton, Snackbar } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
+
 import { getStorage, ref, uploadBytes } from "firebase/storage";
-import { db, auth } from "../firebase";
+import { auth } from "../firebase";
 import { ColorModeContext } from "../context/AppContext";
 const CameraCapture: React.FC = () => {
   const { success, addItem, setSuccess } = React.useContext(ColorModeContext);
